@@ -8,6 +8,7 @@ import com.example.login_auth_api.domain.user.User;
 import com.example.login_auth_api.dtos.LoginRequestDTO;
 import com.example.login_auth_api.dtos.RegisterRequestDTO;
 import com.example.login_auth_api.dtos.ResponseAuthDTO;
+import com.example.login_auth_api.exceptions.ApiException;
 import com.example.login_auth_api.infra.security.TokenService;
 import com.example.login_auth_api.repositories.UserRepository;
 
@@ -29,7 +30,9 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<ResponseAuthDTO> login(@RequestBody LoginRequestDTO data) {
-    User user = this.userRepository.findByEmail(data.email()).orElseThrow(() -> new RuntimeException("User not found"));
+    User user = this.userRepository.findByEmail(data.email())
+    .orElseThrow(() -> new ApiException("User not found", 404));
+  
     if (passwordEncoder.matches(data.password(), user.getPassword())) {
       String token = this.tokenService.generateToken(user);
       return ResponseEntity.ok(new ResponseAuthDTO(user.getName(), token));
@@ -40,16 +43,18 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<ResponseAuthDTO> register(@RequestBody RegisterRequestDTO data) {
     Optional<User> user = this.userRepository.findByEmail(data.email());
-    if (user.isEmpty()) {
-      User newUser = new User();
-      newUser.setName(data.name());
-      newUser.setEmail(data.email());
-      newUser.setPassword(passwordEncoder.encode(data.password()));
-
-      this.userRepository.save(newUser);
-      String token = this.tokenService.generateToken(newUser);
-      return ResponseEntity.ok(new ResponseAuthDTO(newUser.getName(), token));
+    
+    if (user != null) {
+      new ApiException("User already exists", 409);
     }
-    return ResponseEntity.badRequest().build();
+
+    User newUser = new User();
+    newUser.setName(data.name());
+    newUser.setEmail(data.email());
+    newUser.setPassword(passwordEncoder.encode(data.password()));
+
+    this.userRepository.save(newUser);
+    String token = this.tokenService.generateToken(newUser);
+    return ResponseEntity.ok(new ResponseAuthDTO(newUser.getName(), token));
   }
 }

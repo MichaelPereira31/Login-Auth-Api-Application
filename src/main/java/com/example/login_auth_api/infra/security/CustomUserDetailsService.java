@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.example.login_auth_api.domain.user.User;
+import com.example.login_auth_api.exceptions.ApiException;
 import com.example.login_auth_api.repositories.UserRepository;
 
 @Service
@@ -18,7 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    User user = this.userRepository.findByEmail(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    User user = this.userRepository.findByEmail(username).orElseThrow(() -> new ApiException("User not found", 404));
     return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), new ArrayList<>());
   }
 

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.login_auth_api.domain.user.User;
+import com.example.login_auth_api.exceptions.ApiException;
 import com.example.login_auth_api.repositories.UserRepository;
 
 import jakarta.servlet.FilterChain;
@@ -31,7 +32,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         var login = tokenService.validationToken(token);
 
         if(login != null){
-            User user = userRepository.findByEmail(login).orElseThrow(() -> new RuntimeException("User Not Found"));
+            User user = userRepository.findByEmail(login).orElseThrow(() -> new ApiException("User not found", 404));
             var authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
             var authentication = new UsernamePasswordAuthenticationToken(user, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
